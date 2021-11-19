@@ -43,8 +43,7 @@ jobs:
       with:
         body: This is the Linux x64 compatible native image build using Red Hat Mandrel build
         files: |
-          target/quarkus-wrk-runner
-          target/quarkus-wrk-runner.jar
+          target/quarkus-wrk-runner.exe
         tag_name: "0.1.0-windows_x64"
         prerelease: true
       env:
