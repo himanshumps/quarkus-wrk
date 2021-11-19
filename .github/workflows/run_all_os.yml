@@ -126,7 +126,6 @@ jobs:
       - name: 'Print Info'
         run: java -version && gu list -v && mvn --version && pwd
       - name: 'Build Image (macos / darwin)'
-        shell: cmd
         run: mvn --batch-mode -Pnative clean package
       - name: Download upload_url artifact
         uses: actions/download-artifact@v2
