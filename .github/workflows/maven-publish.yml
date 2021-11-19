@@ -20,4 +20,13 @@ jobs:
         java-version: '11'
         distribution: 'temurin'
     - name: Build with Maven
-      run: mvn clean package -Pnative
+      run: mvn -B clean package -Pnative
+    - name: Release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: |
+          target/quarkus-wrk-1.0.0-SNAPSHOT-runner
+        tag_name: "0.1.0"
+        prerelease: true
+      env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}      
