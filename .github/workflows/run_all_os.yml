@@ -67,7 +67,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   windows-amd64:
-    runs-on: windows-2019
+    runs-on: windows-latest
     permissions:
       contents: write
       packages: write
@@ -103,6 +103,46 @@ jobs:
           upload_url: ${{ env.upload_url }}
           asset_path: target/quarkus-wrk-runner.exe
           asset_name: quarkus-wrk.exe
+          asset_content_type: application/octet-stream
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  macos-darwin-amd64:
+    runs-on: macos-latest
+    permissions:
+      contents: write
+      packages: write
+    steps:
+      - uses: actions/checkout@v2
+      - name: 'Setup GraalVM'
+        uses: DeLaGuardo/setup-graalvm@5.0
+        with:
+          graalvm: '21.3.0'
+          java: 'java17'
+          arch: 'amd64'
+          platform: 'darwin'
+          personal-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: 'Install native-image'
+        run: gu install native-image
+      - name: 'Print Info'
+        run: java -version && gu list -v && mvn --version && pwd
+      - name: 'Build Image (macos / darwin)'
+        shell: cmd
+        run: mvn --batch-mode -Pnative clean package
+      - name: Download upload_url artifact
+        uses: actions/download-artifact@v2
+        with:
+          name: upload_url.txt
+      - name: Get upload_url
+        run: |
+          export upload_url=$(cat upload_url.txt)
+          rm upload_url.txt
+          echo "upload_url=${upload_url}" >> $GITHUB_ENV
+      - name: Upload Release Asset
+        uses: actions/upload-release-asset@v1
+        with:
+          upload_url: ${{ env.upload_url }}
+          asset_path: target/quarkus-wrk-runner
+          asset_name: quarkus-wrk-macos
           asset_content_type: application/octet-stream
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
