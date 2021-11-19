@@ -98,16 +98,19 @@ public class WrkToolQuarkusApplication implements Runnable, QuarkusApplication {
                             //.setOpenSslEngineOptions(new OpenSSLEngineOptions().setSessionCacheEnabled(false))
                             .setMaxPoolSize(2)), now))
             .collect(Collectors.toList());
+    Instant completedTime = null;
     try {
       CompletableFuture.allOf(listOfCompletableFuture.toArray(new CompletableFuture[0])).get();
+      completedTime = Instant.now();
     } catch (InterruptedException e) {
       e.printStackTrace();
     } catch (ExecutionException e) {
       e.printStackTrace();
     }
-    System.out.println(MessageFormat.format("\n\n{0} requests in {1}s, {1} read", requestCounter.get(), durationInSec, humanReadableByteCountSI(bytesCounter.get())));
-    System.out.println(MessageFormat.format("Requests/sec: {0,number,#}", ((int)(requestCounter.get()/durationInSec))));
-    System.out.println(MessageFormat.format("Transfer/sec: {0}", humanReadableByteCountSI(bytesCounter.get()/durationInSec)));
+    Duration difference = Duration.between(now, completedTime);
+    System.out.println(MessageFormat.format("\n\n{0,number,#} requests in {1}.{2,number,#}, {3} read", requestCounter.get(), LocalTime.ofSecondOfDay(difference.getSeconds()), difference.getNano(), humanReadableByteCountSI(bytesCounter.get())));
+    System.out.println(MessageFormat.format("Requests/sec: {0,number,#}", ((int) (requestCounter.get() / durationInSec))));
+    System.out.println(MessageFormat.format("Transfer/sec: {0}", humanReadableByteCountSI(bytesCounter.get() / durationInSec)));
   }
 
   public CompletableFuture<io.vertx.ext.web.client.HttpResponse<Buffer>> request(WebClient webClient, Instant instant) {
@@ -131,6 +134,7 @@ public class WrkToolQuarkusApplication implements Runnable, QuarkusApplication {
               }
             });
   }
+
   public static String humanReadableByteCountSI(long bytes) {
     if (-1000 < bytes && bytes < 1000) {
       return bytes + " B";
