@@ -21,8 +21,8 @@ jobs:
         distribution: 'temurin'
     - name: Build with Maven
       run: mvn -B clean package -Pnative
-    - name: Delete the previous release
     - uses: dev-drprasad/delete-tag-and-release@v0.2.0
+    - name: Delete the previous release
       with:
         delete_release: true
         tag_name: "0.1.0"
