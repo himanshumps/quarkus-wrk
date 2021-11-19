@@ -23,7 +23,7 @@ jobs:
     - name: Build with Maven
       run: mvn -B clean package -Pnative
     - name: "List target directory"
-      run: ls -altr target/*
+      run: ls -altrR target/*
     - uses: dev-drprasad/delete-tag-and-release@v0.2.0
       name: Delete the previous release
       with:
@@ -36,7 +36,7 @@ jobs:
       with:
         files: |
           target/quarkus-wrk-runner
-          target/quarkus-wrk-runner.jar
+          target/quarkus-wrk-native-image-source-jar/quarkus-wrk-runner.jar
         tag_name: "0.1.0"
         prerelease: true
       env:
