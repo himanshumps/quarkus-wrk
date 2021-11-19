@@ -85,7 +85,7 @@ public class WrkToolQuarkusApplication implements Runnable, QuarkusApplication {
     List<CompletableFuture<HttpResponse<Buffer>>> listOfCompletableFuture = IntStream.range(0, 100).mapToObj(x -> request(WebClient
                     .create(vertx, new WebClientOptions()
                             .setConnectTimeout((int) Duration.ofSeconds(timeoutInSec).toMillis())
-                            .setTryUseCompression(true)
+                            //.setTryUseCompression(true)
                             .setVerifyHost(false)
                             .setReuseAddress(true)
                             .setReusePort(true)
