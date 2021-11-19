@@ -85,7 +85,7 @@ public class WrkToolQuarkusApplication implements Runnable, QuarkusApplication {
     List<CompletableFuture<HttpResponse<Buffer>>> listOfCompletableFuture = IntStream.range(0, 100).mapToObj(x -> request(WebClient
                     .create(vertx, new WebClientOptions()
                             .setConnectTimeout((int) Duration.ofSeconds(timeoutInSec).toMillis())
-                            //.setTryUseCompression(true)
+                            .setTryUseCompression(true)
                             .setVerifyHost(false)
                             .setReuseAddress(true)
                             .setReusePort(true)
@@ -93,7 +93,6 @@ public class WrkToolQuarkusApplication implements Runnable, QuarkusApplication {
                             .setTcpNoDelay(true)
                             .setTcpQuickAck(true)
                             .setKeepAlive(true)
-                            //.setOpenSslEngineOptions(new OpenSSLEngineOptions().setSessionCacheEnabled(false))
                             .setMaxPoolSize(2)), now))
             .collect(Collectors.toList());
     try {
