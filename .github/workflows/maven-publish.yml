@@ -24,8 +24,20 @@ jobs:
       run: mvn -B clean package
     - name: Build native app with maven
       run: mvn -B package -Pnative
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: "0.2.0"
+        release_name: Release ${{ github.ref }}
+        draft: false
+        prerelease: false
     - name: "List target directory"
-      run: ls -altrR target/*
+      run: echo ${{ steps.create_release.outputs.upload_url }}
+    - name: "List 2"
+      run: echo ${ steps.create_release.outputs.upload_url }
     - uses: dev-drprasad/delete-tag-and-release@v0.2.0
       name: Delete the previous release
       with:
