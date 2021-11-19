@@ -32,8 +32,8 @@ jobs:
       uses: softprops/action-gh-release@v1
       with:
         files: |
-          target/quarkus-wrk
-          terget/quarkus-wrk.jar
+          target/quarkus-wrk-runner
+          terget/quarkus-wrk-runner.jar
         tag_name: "0.1.0"
         prerelease: true
       env:
