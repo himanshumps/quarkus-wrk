@@ -7,21 +7,25 @@ import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.impl.headers.HeadersMultiMap;
 import io.vertx.core.impl.cpu.CpuCoreSensor;
-import io.vertx.core.net.OpenSSLEngineOptions;
 import io.vertx.ext.web.client.HttpResponse;
 import io.vertx.ext.web.client.WebClient;
 import io.vertx.ext.web.client.WebClientOptions;
 import picocli.CommandLine;
 
 import javax.inject.Inject;
+import java.text.CharacterIterator;
+import java.text.MessageFormat;
+import java.text.StringCharacterIterator;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalTime;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -57,8 +61,8 @@ public class WrkToolQuarkusApplication implements Runnable, QuarkusApplication {
 
   MultiMap headersMultiMap = new HeadersMultiMap();
 
-  private AtomicInteger atomicInteger = new AtomicInteger();
-  private AtomicInteger outerAtomicInteger = new AtomicInteger();
+  private AtomicInteger requestCounter = new AtomicInteger();
+  private AtomicLong bytesCounter = new AtomicLong();
 
   public WrkToolQuarkusApplication(Vertx vertx) {
     this.vertx = vertx;
@@ -77,11 +81,8 @@ public class WrkToolQuarkusApplication implements Runnable, QuarkusApplication {
               header.substring(header.indexOf(":") + 1).trim()
       );
     }
-    System.out.println(headersMultiMap);
-    System.out.println(url);
-    System.out.println(connections);
-    System.out.println(threads);
-    System.out.println(durationInSec);
+    System.out.println(MessageFormat.format("Running {0} test @ {1}", LocalTime.ofSecondOfDay(durationInSec), url));
+    System.out.println(MessageFormat.format("{0,number,#} threads and {1,number,#} connections", CpuCoreSensor.availableProcessors() * 2, connections));
     Instant now = Instant.now();
     List<CompletableFuture<HttpResponse<Buffer>>> listOfCompletableFuture = IntStream.range(0, 100).mapToObj(x -> request(WebClient
                     .create(vertx, new WebClientOptions()
@@ -104,9 +105,9 @@ public class WrkToolQuarkusApplication implements Runnable, QuarkusApplication {
     } catch (ExecutionException e) {
       e.printStackTrace();
     }
-    System.out.println("Completed: " + Instant.now());
-    System.out.println("Inner Counter: " + atomicInteger.get());
-    System.out.println("Outer Counter: " + outerAtomicInteger.get());
+    System.out.println(MessageFormat.format("\n\n{0} requests in {1}s, {1} read", requestCounter.get(), durationInSec, humanReadableByteCountSI(bytesCounter.get())));
+    System.out.println(MessageFormat.format("Requests/sec: {0,number,#}", ((int)(requestCounter.get()/durationInSec))));
+    System.out.println(MessageFormat.format("Transfer/sec: {0}", humanReadableByteCountSI(bytesCounter.get()/durationInSec)));
   }
 
   public CompletableFuture<io.vertx.ext.web.client.HttpResponse<Buffer>> request(WebClient webClient, Instant instant) {
@@ -119,16 +120,26 @@ public class WrkToolQuarkusApplication implements Runnable, QuarkusApplication {
             .thenComposeAsync(new Function<HttpResponse<Buffer>, CompletionStage<HttpResponse<Buffer>>>() {
               @Override
               public CompletionStage<io.vertx.ext.web.client.HttpResponse<Buffer>> apply(io.vertx.ext.web.client.HttpResponse<Buffer> stringHttpResponse) {
-                outerAtomicInteger.incrementAndGet();
-                //System.out.println("Comparing " + Instant.now() + "    " + instant.plusSeconds(100));
                 if (Instant.now().isBefore(instant.plusSeconds(durationInSec))) {
-                  //System.out.println("Inner - Comparing " + Instant.now() + "    " + instant.plusSeconds(10));
-                  atomicInteger.incrementAndGet();
+                  requestCounter.incrementAndGet();
+                  bytesCounter.addAndGet(stringHttpResponse.bodyAsString().getBytes().length);
                   return request(webClient, instant);
                 } else {
+                  webClient.close();
                   return CompletableFuture.<io.vertx.ext.web.client.HttpResponse<Buffer>>completedFuture(stringHttpResponse);
                 }
               }
             });
+  }
+  public static String humanReadableByteCountSI(long bytes) {
+    if (-1000 < bytes && bytes < 1000) {
+      return bytes + " B";
+    }
+    CharacterIterator ci = new StringCharacterIterator("kMGTPE");
+    while (bytes <= -999_950 || bytes >= 999_950) {
+      bytes /= 1000;
+      ci.next();
+    }
+    return String.format("%.1f%cB", bytes / 1000.0, ci.current());
   }
 }
