@@ -21,6 +21,12 @@ jobs:
         distribution: 'temurin'
     - name: Build with Maven
       run: mvn -B clean package -Pnative
+    - uses: dev-drprasad/delete-tag-and-release@v0.2.0
+      with:
+        delete_release: true # default: false
+        tag_name: "0.1.0"
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}      
     - name: Release
       uses: softprops/action-gh-release@v1
       with:
