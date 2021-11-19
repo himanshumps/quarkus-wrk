@@ -137,27 +137,6 @@
                     <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
                     <maven.home>${maven.home}</maven.home>
                   </systemPropertyVariables>
-                  <buildArgs>
-                    --no-fallback --verbose
-                    --initialize-at-run-time=io.netty.buffer.UnpooledDirectByteBuf
-                    --initialize-at-run-time=io.netty.buffer.AbstractPooledDerivedByteBuf
-                    --initialize-at-run-time=io.netty.buffer.UnpooledHeapByteBuf
-                    --initialize-at-run-time=io.netty.handler.ssl.PemValue
-                    --initialize-at-run-time=io.netty.util.AbstractReferenceCounted
-                    --initialize-at-run-time=io.netty.handler.ssl.PemPrivateKey
-                    --initialize-at-run-time=io.netty.buffer.PooledByteBufAllocator
-                    --initialize-at-run-time=io.netty.buffer.UnpooledUnsafeDirectByteBuf
-                    --initialize-at-run-time=io.netty.buffer.ByteBufUtil
-                    --initialize-at-run-time=io.netty.buffer.UnpooledByteBufAllocator$InstrumentedUnpooledUnsafeDirectByteBuf
-                    --initialize-at-run-time=io.netty.buffer.AbstractReferenceCountedByteBuf
-                    --initialize-at-run-time=io.netty.buffer.ByteBufAllocator
-                    --initialize-at-run-time=io.netty.handler.ssl.JdkNpnApplicationProtocolNegotiator
-                    --initialize-at-run-time=io.netty.handler.ssl.OpenSsl
-                    --initialize-at-run-time=io.netty.internal.tcnative.SSL
-                    --initialize-at-run-time=io.netty.handler.ssl.ReferenceCountedOpenSslEngine
-                    --initialize-at-run-time=io.netty.internal.tcnative.CertificateVerifier
-                    --initialize-at-run-time=io.netty.util.internal.logging.Log4JLogger
-                  </buildArgs>
                 </configuration>
               </execution>
             </executions>
