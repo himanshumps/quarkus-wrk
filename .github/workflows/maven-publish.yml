@@ -19,6 +19,7 @@ jobs:
       with:
         java-version: '17'
         distribution: 'temurin'
+        cache: maven
     - name: Build with Maven
       run: mvn -B clean package -Pnative
     - uses: dev-drprasad/delete-tag-and-release@v0.2.0
