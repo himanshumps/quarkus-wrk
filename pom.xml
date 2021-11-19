@@ -56,13 +56,13 @@
       <scope>compile</scope>
       <optional>false</optional>
     </dependency>
-    <dependency>
+    <!--<dependency>
       <groupId>io.netty</groupId>
       <artifactId>netty-transport-native-epoll</artifactId>
       <classifier>linux-x86_64</classifier>
       <scope>compile</scope>
       <optional>false</optional>
-    </dependency>
+    </dependency>-->
     <dependency>
       <groupId>io.quarkus</groupId>
       <artifactId>quarkus-junit5</artifactId>
