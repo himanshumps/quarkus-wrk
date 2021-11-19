@@ -77,7 +77,7 @@ public class WrkToolQuarkusApplication implements Runnable, QuarkusApplication {
               header.substring(header.indexOf(":") + 1).trim()
       );
     }
-    System.out.println(MessageFormat.format("Running {0} test @ {1}", LocalTime.ofSecondOfDay(durationInSec), url));
+    System.out.println(MessageFormat.format("\nRunning {0} test @ {1}", LocalTime.ofSecondOfDay(durationInSec), url));
     System.out.println(MessageFormat.format("{0,number,#} event loop and {1,number,#} connections", CpuCoreSensor.availableProcessors() * 2, connections));
     Instant startTimeOfCompletableFutures = Instant.now();
     Instant endTimeOfCompletableFutures;
@@ -101,7 +101,7 @@ public class WrkToolQuarkusApplication implements Runnable, QuarkusApplication {
       return;
     }
     Duration difference = Duration.between(startTimeOfCompletableFutures, endTimeOfCompletableFutures);
-    System.out.println(MessageFormat.format("\n\n{0,number,#} requests in {1}.{2,number,#}, {3} read", requestCounter.get(), LocalTime.ofSecondOfDay(difference.getSeconds()), difference.getNano(), humanReadableByteCountSI(bytesCounter.get())));
+    System.out.println(MessageFormat.format("\n{0,number,#} requests in {1}.{2,number,#}, {3} read", requestCounter.get(), LocalTime.ofSecondOfDay(difference.getSeconds()), difference.getNano(), humanReadableByteCountSI(bytesCounter.get())));
     System.out.println(MessageFormat.format("Requests/sec: {0,number,#}", requestCounter.get() / durationInSec));
     System.out.println(MessageFormat.format("Transfer/sec: {0}", humanReadableByteCountSI(bytesCounter.get() / durationInSec)));
   }
