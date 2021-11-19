@@ -5,14 +5,13 @@ name: Native Application (All Versions)
 
 on:
   workflow_dispatch:
-
+env:
+  tag_name: 0.0.1
+  java_version: 17
+  java_version_name: java17
+  graalvm: '21.3.0'
+  mandrel_builder_image: 'quay.io/quarkus/ubi-quarkus-mandrel:21.3.0.0-Final-java17'
 jobs:
-  env:
-    tag_name: 0.0.1
-    java_version: 17
-    java_version_name: java17
-    graalvm: '21.3.0'
-    mandrel_builder_image: 'quay.io/quarkus/ubi-quarkus-mandrel:21.3.0.0-Final-java17'
   linux-jdk17-mandrel-x64:
     runs-on: ubuntu-latest
     permissions:
