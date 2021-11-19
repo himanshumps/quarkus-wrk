@@ -33,10 +33,6 @@
       <groupId>io.quarkus</groupId>
       <artifactId>quarkus-arc</artifactId>
     </dependency>
-    <!--<dependency>
-      <groupId>io.quarkus</groupId>
-      <artifactId>quarkus-resteasy</artifactId>
-    </dependency>-->
     <dependency>
       <groupId>io.quarkus</groupId>
       <artifactId>quarkus-vertx</artifactId>
@@ -151,6 +147,7 @@
       </build>
       <properties>
         <quarkus.package.type>native</quarkus.package.type>
+        <quarkus.native.additional-build-args>--initialize-at-run-time=io.netty.util.AbstractReferenceCounted\,io.netty.buffer.AbstractPooledDerivedByteBuf\,io.netty.buffer.PooledByteBuf\,io.netty.buffer.PooledSlicedByteBuf\,io.netty.buffer.UnpooledHeapByteBuf\,io.netty.buffer.PooledByteBufAllocator\,io.netty.buffer.UnpooledByteBufAllocator$InstrumentedUnpooledUnsafeDirectByteBuf\,io.netty.buffer.PooledUnsafeDirectByteBuf\,io.netty.buffer.UnpooledDirectByteBuf\,io.netty.buffer.AbstractReferenceCountedByteBuf\,io.netty.buffer.ByteBufAllocator\,io.netty.handler.ssl.ReferenceCountedOpenSslContext\,io.netty.buffer.ByteBufUtil\,io.netty.buffer.UnpooledUnsafeDirectByteBuf</quarkus.native.additional-build-args>
       </properties>
     </profile>
   </profiles>
