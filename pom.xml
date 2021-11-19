@@ -139,12 +139,6 @@
                   </systemPropertyVariables>
                   <buildArgs>
                     --no-fallback --verbose
-                    --features=org.graalvm.home.HomeFinderFeature
-
-                    --initialize-at-build-time=org.slf4j.impl.StaticLoggerBinder
-                    --initialize-at-build-time=org.slf4j.impl.JDK14LoggerAdapter
-                    --initialize-at-build-time=org.slf4j.LoggerFactory
-
                     --initialize-at-run-time=io.netty.buffer.UnpooledDirectByteBuf
                     --initialize-at-run-time=io.netty.buffer.AbstractPooledDerivedByteBuf
                     --initialize-at-run-time=io.netty.buffer.UnpooledHeapByteBuf
@@ -163,10 +157,6 @@
                     --initialize-at-run-time=io.netty.handler.ssl.ReferenceCountedOpenSslEngine
                     --initialize-at-run-time=io.netty.internal.tcnative.CertificateVerifier
                     --initialize-at-run-time=io.netty.util.internal.logging.Log4JLogger
-                    --initialize-at-run-time=io.netty.handler.ssl.JettyNpnSslEngine
-                    --initialize-at-run-time=io.netty.handler.ssl.JettyAlpnSslEngine$ClientEngine
-                    --initialize-at-run-time=io.netty.handler.ssl.JettyAlpnSslEngine$ServerEngine
-                    --initialize-at-run-time=io.netty.handler.ssl.ConscryptAlpnSslEngine
                   </buildArgs>
                 </configuration>
               </execution>
