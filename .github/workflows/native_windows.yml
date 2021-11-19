@@ -28,9 +28,9 @@ jobs:
     - name: 'Build Image (windows)'
       shell: cmd
       run: call "C:/Program Files (x86)/Microsoft Visual Studio/2019/Enterprise/VC/Auxiliary/Build/vcvars64.bat" && mvn --batch-mode -Pnative clean package
-    - name: 'Build Image (windows)'
+    - name: 'List target directory'
       shell: cmd
-      run: dir target/*
+      run: dir /N /B /s target
     - uses: dev-drprasad/delete-tag-and-release@v0.2.0
       name: Delete the previous release
       with:
