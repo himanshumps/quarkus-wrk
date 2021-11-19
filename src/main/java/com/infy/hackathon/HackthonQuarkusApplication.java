@@ -4,7 +4,6 @@ import io.quarkus.runtime.QuarkusApplication;
 import io.quarkus.runtime.annotations.QuarkusMain;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Vertx;
-import io.vertx.core.VertxOptions;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.impl.headers.HeadersMultiMap;
 import io.vertx.core.impl.cpu.CpuCoreSensor;
@@ -15,6 +14,7 @@ import io.vertx.ext.web.client.WebClientOptions;
 import picocli.CommandLine;
 
 import javax.inject.Inject;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Locale;
@@ -32,16 +32,16 @@ public class HackthonQuarkusApplication implements Runnable, QuarkusApplication 
   @Inject
   CommandLine.IFactory factory;
 
-  private Vertx vertx;
+  private final Vertx vertx;
 
-  @CommandLine.Option(names = {"-c", "--connections"}, description = "Connections to keep open")
-  private Integer connections = 20;
+  @CommandLine.Option(names = {"-c", "--connections"}, description = "Connections to keep open", defaultValue = "20", showDefaultValue = CommandLine.Help.Visibility.ALWAYS)
+  private Integer connections;
 
-  @CommandLine.Option(names = {"-d", "--duration"}, description = "Duration of test in seconds")
-  private Integer durationInSec = 30;
+  @CommandLine.Option(names = {"-d", "--duration"}, description = "Duration of test in seconds", defaultValue = "30", showDefaultValue = CommandLine.Help.Visibility.ALWAYS)
+  private Integer durationInSec;
 
-  @CommandLine.Option(names = {"-t", "--threads"}, description = "Number of threads to use. It should be (2 * Available Processors)")
-  private Integer threads = 2;
+  @CommandLine.Option(names = {"-t", "--threads"}, description = "Number of threads to use (2 * Available Processors). It is not advised to pass this property and let it use the system default")
+  private Integer threads = CpuCoreSensor.availableProcessors() * 2;
 
   @CommandLine.Option(names = {"-H", "--header"}, description = "Add header to request")
   private List<String> headers;
@@ -49,10 +49,10 @@ public class HackthonQuarkusApplication implements Runnable, QuarkusApplication 
   @CommandLine.Option(names = "-L", description = "Print latency statistics")
   private boolean latency;
 
-  @CommandLine.Option(names = "--timeout", description = "Socket/request timeout in seconds")
-  private Integer timeoutInSec = 30;
+  @CommandLine.Option(names = "--timeout", description = "Socket/request timeout in seconds", defaultValue = "30", showDefaultValue = CommandLine.Help.Visibility.ALWAYS)
+  private Integer timeoutInSec;
 
-  @CommandLine.Parameters(index = "0", description = "The url to hit")
+  @CommandLine.Parameters(index = "0", description = "The url to hit", defaultValue = "http://localhost:8080/", showDefaultValue = CommandLine.Help.Visibility.ALWAYS)
   private String url;
 
   MultiMap headersMultiMap = new HeadersMultiMap();
@@ -60,10 +60,15 @@ public class HackthonQuarkusApplication implements Runnable, QuarkusApplication 
   private AtomicInteger atomicInteger = new AtomicInteger();
   private AtomicInteger outerAtomicInteger = new AtomicInteger();
 
+  public HackthonQuarkusApplication(Vertx vertx) {
+    //System.setProperty("vertx.disableDnsResolver", "true");
+    //System.setProperty("vertx.options.preferNativeTransport", "true");
+    this.vertx = vertx;
+  }
+
   @Override
   public int run(String... args) throws Exception {
-    System.setProperty("vertx.disableDnsResolver", "true");
-    vertx = Vertx.vertx(new VertxOptions().setEventLoopPoolSize(threads).setPreferNativeTransport(true));
+    //
     return new CommandLine(this, factory).execute(args);
   }
 
@@ -83,6 +88,7 @@ public class HackthonQuarkusApplication implements Runnable, QuarkusApplication 
     Instant now = Instant.now();
     List<CompletableFuture<HttpResponse<Buffer>>> listOfCompletableFuture = IntStream.range(0, 100).mapToObj(x -> request(WebClient
                     .create(vertx, new WebClientOptions()
+                            .setConnectTimeout((int)Duration.ofSeconds(timeoutInSec).toMillis())
                             .setTryUseCompression(true)
                             .setVerifyHost(false)
                             .setReuseAddress(true)
@@ -92,7 +98,7 @@ public class HackthonQuarkusApplication implements Runnable, QuarkusApplication 
                             .setTcpQuickAck(true)
                             .setKeepAlive(true)
                             .setMaxPoolSize(2)
-                            .setOpenSslEngineOptions(new OpenSSLEngineOptions().setSessionCacheEnabled(false))), url, headersMultiMap, now))
+                            .setOpenSslEngineOptions(new OpenSSLEngineOptions().setSessionCacheEnabled(false))), now))
             .collect(Collectors.toList());
     try {
       CompletableFuture.allOf(listOfCompletableFuture.toArray(new CompletableFuture[0])).get();
@@ -106,7 +112,7 @@ public class HackthonQuarkusApplication implements Runnable, QuarkusApplication 
     System.out.println("Outer Counter: " + outerAtomicInteger.get());
   }
 
-  public CompletableFuture<io.vertx.ext.web.client.HttpResponse<Buffer>> request(WebClient webClient, String url, MultiMap headersMultiMap, Instant instant) {
+  public CompletableFuture<io.vertx.ext.web.client.HttpResponse<Buffer>> request(WebClient webClient, Instant instant) {
     return webClient.getAbs(url)
             .ssl(url.startsWith("https") ? true : false)
             .putHeaders(headersMultiMap)
@@ -121,7 +127,7 @@ public class HackthonQuarkusApplication implements Runnable, QuarkusApplication 
                 if (Instant.now().isBefore(instant.plusSeconds(10))) {
                   //System.out.println("Inner - Comparing " + Instant.now() + "    " + instant.plusSeconds(10));
                   atomicInteger.incrementAndGet();
-                  return request(webClient, url, headersMultiMap, instant);
+                  return request(webClient, instant);
                 } else {
                   return CompletableFuture.<io.vertx.ext.web.client.HttpResponse<Buffer>>completedFuture(stringHttpResponse);
                 }
