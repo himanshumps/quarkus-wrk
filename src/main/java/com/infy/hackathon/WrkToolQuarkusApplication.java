@@ -7,6 +7,7 @@ import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.impl.headers.HeadersMultiMap;
 import io.vertx.core.impl.cpu.CpuCoreSensor;
+import io.vertx.core.net.OpenSSLEngineOptions;
 import io.vertx.ext.web.client.HttpResponse;
 import io.vertx.ext.web.client.WebClient;
 import io.vertx.ext.web.client.WebClientOptions;
@@ -85,7 +86,7 @@ public class WrkToolQuarkusApplication implements Runnable, QuarkusApplication {
     List<CompletableFuture<HttpResponse<Buffer>>> listOfCompletableFuture = IntStream.range(0, 100).mapToObj(x -> request(WebClient
                     .create(vertx, new WebClientOptions()
                             .setConnectTimeout((int) Duration.ofSeconds(timeoutInSec).toMillis())
-                            //.setTryUseCompression(true)
+                            .setTryUseCompression(true)
                             .setVerifyHost(false)
                             .setReuseAddress(true)
                             .setReusePort(true)
@@ -93,6 +94,7 @@ public class WrkToolQuarkusApplication implements Runnable, QuarkusApplication {
                             .setTcpNoDelay(true)
                             .setTcpQuickAck(true)
                             .setKeepAlive(true)
+                            //.setOpenSslEngineOptions(new OpenSSLEngineOptions().setSessionCacheEnabled(false))
                             .setMaxPoolSize(2)), now))
             .collect(Collectors.toList());
     try {
@@ -119,7 +121,7 @@ public class WrkToolQuarkusApplication implements Runnable, QuarkusApplication {
               public CompletionStage<io.vertx.ext.web.client.HttpResponse<Buffer>> apply(io.vertx.ext.web.client.HttpResponse<Buffer> stringHttpResponse) {
                 outerAtomicInteger.incrementAndGet();
                 //System.out.println("Comparing " + Instant.now() + "    " + instant.plusSeconds(100));
-                if (Instant.now().isBefore(instant.plusSeconds(10))) {
+                if (Instant.now().isBefore(instant.plusSeconds(durationInSec))) {
                   //System.out.println("Inner - Comparing " + Instant.now() + "    " + instant.plusSeconds(10));
                   atomicInteger.incrementAndGet();
                   return request(webClient, instant);

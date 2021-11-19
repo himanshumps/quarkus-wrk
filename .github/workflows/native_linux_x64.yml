@@ -1,7 +1,7 @@
 # This workflow will build a package using Maven and then publish it to GitHub packages when a release is created
 # For more information see: https://github.com/actions/setup-java/blob/main/docs/advanced-usage.md#apache-maven-with-a-settings-path
 
-name: Native Application
+name: Native Application (Linux x64 - Mandrel)
 
 on:
   workflow_dispatch:
@@ -23,35 +23,22 @@ jobs:
     - name: Build fat jar with maven
       run: mvn -B clean package
     - name: Build native app with maven
-      run: mvn -B package -Pnative
-    - name: Create Release
-      id: create_release
-      uses: actions/create-release@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        tag_name: "0.2.0"
-        release_name: Release ${{ github.ref }}
-        draft: false
-        prerelease: false
-    - name: "List target directory"
-      run: echo ${{ steps.create_release.outputs.upload_url }}
-    - name: "List 2"
-      run: echo ${ steps.create_release.outputs.upload_url }
+      run: mvn -B package -Pnative -Dquarkus.native.builder-image=quay.io/quarkus/ubi-quarkus-mandrel:21.3.0.0-Final-java17
     - uses: dev-drprasad/delete-tag-and-release@v0.2.0
       name: Delete the previous release
       with:
         delete_release: true
-        tag_name: "0.1.0"
+        tag_name: "0.1.0-linux_x64"
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}      
     - name: Release
       uses: softprops/action-gh-release@v1
       with:
+        body: This is the Linux x64 compatible native image build using Red Hat Mandrel build
         files: |
           target/quarkus-wrk-runner
           target/quarkus-wrk-runner.jar
-        tag_name: "0.1.0"
+        tag_name: "0.1.0-linux_x64"
         prerelease: true
       env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
