@@ -7,7 +7,6 @@ import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.impl.headers.HeadersMultiMap;
 import io.vertx.core.impl.cpu.CpuCoreSensor;
-import io.vertx.ext.web.client.HttpResponse;
 import io.vertx.ext.web.client.WebClient;
 import io.vertx.ext.web.client.WebClientOptions;
 import picocli.CommandLine;
@@ -22,12 +21,9 @@ import java.time.LocalTime;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 @QuarkusMain
@@ -44,7 +40,7 @@ public class WrkToolQuarkusApplication implements Runnable, QuarkusApplication {
   @CommandLine.Option(names = {"-d", "--duration"}, description = "Duration of test in seconds", defaultValue = "30", showDefaultValue = CommandLine.Help.Visibility.ALWAYS)
   private Integer durationInSec;
 
-  @CommandLine.Option(names = {"-t", "--threads"}, description = "Number of threads to use (2 * Available Processors). It is not advised to pass this property and let it use the system default")
+  @CommandLine.Option(names = {"-t", "--threads"}, description = "Number of event loop threads to use (2 * Available Processors). It is not advised to pass this property and let it use the system generated")
   private Integer threads = CpuCoreSensor.availableProcessors() * 2;
 
   @CommandLine.Option(names = {"-H", "--header"}, description = "Add header to request")
@@ -61,15 +57,15 @@ public class WrkToolQuarkusApplication implements Runnable, QuarkusApplication {
 
   MultiMap headersMultiMap = new HeadersMultiMap();
 
-  private AtomicInteger requestCounter = new AtomicInteger();
-  private AtomicLong bytesCounter = new AtomicLong();
+  private final AtomicInteger requestCounter = new AtomicInteger();
+  private final AtomicLong bytesCounter = new AtomicLong();
 
   public WrkToolQuarkusApplication(Vertx vertx) {
     this.vertx = vertx;
   }
 
   @Override
-  public int run(String... args) throws Exception {
+  public int run(String... args) {
     return new CommandLine(this, factory).execute(args);
   }
 
@@ -82,55 +78,49 @@ public class WrkToolQuarkusApplication implements Runnable, QuarkusApplication {
       );
     }
     System.out.println(MessageFormat.format("Running {0} test @ {1}", LocalTime.ofSecondOfDay(durationInSec), url));
-    System.out.println(MessageFormat.format("{0,number,#} threads and {1,number,#} connections", CpuCoreSensor.availableProcessors() * 2, connections));
-    Instant now = Instant.now();
-    List<CompletableFuture<HttpResponse<Buffer>>> listOfCompletableFuture = IntStream.range(0, 100).mapToObj(x -> request(WebClient
-                    .create(vertx, new WebClientOptions()
-                            .setConnectTimeout((int) Duration.ofSeconds(timeoutInSec).toMillis())
-                            .setTryUseCompression(true)
-                            .setVerifyHost(false)
-                            .setReuseAddress(true)
-                            .setReusePort(true)
-                            .setTcpFastOpen(true)
-                            .setTcpNoDelay(true)
-                            .setTcpQuickAck(true)
-                            .setKeepAlive(true)
-                            //.setOpenSslEngineOptions(new OpenSSLEngineOptions().setSessionCacheEnabled(false))
-                            .setMaxPoolSize(2)), now))
-            .collect(Collectors.toList());
-    Instant completedTime = null;
+    System.out.println(MessageFormat.format("{0,number,#} event loop and {1,number,#} connections", CpuCoreSensor.availableProcessors() * 2, connections));
+    Instant startTimeOfCompletableFutures = Instant.now();
+    Instant endTimeOfCompletableFutures;
     try {
-      CompletableFuture.allOf(listOfCompletableFuture.toArray(new CompletableFuture[0])).get();
-      completedTime = Instant.now();
-    } catch (InterruptedException e) {
+      CompletableFuture.allOf(IntStream.range(0, 100).mapToObj(x -> request(WebClient
+              .create(vertx, new WebClientOptions()
+                      .setConnectTimeout((int) Duration.ofSeconds(timeoutInSec).toMillis())
+                      .setTryUseCompression(true)
+                      .setVerifyHost(false)
+                      .setReuseAddress(true)
+                      .setReusePort(true)
+                      .setTcpFastOpen(true)
+                      .setTcpNoDelay(true)
+                      .setTcpQuickAck(true)
+                      .setKeepAlive(true)
+                      //.setOpenSslEngineOptions(new OpenSSLEngineOptions().setSessionCacheEnabled(false))
+                      .setMaxPoolSize(2)), startTimeOfCompletableFutures)).toArray(CompletableFuture[]::new)).get();
+      endTimeOfCompletableFutures = Instant.now();
+    } catch (InterruptedException | ExecutionException e) {
       e.printStackTrace();
-    } catch (ExecutionException e) {
-      e.printStackTrace();
+      return;
     }
-    Duration difference = Duration.between(now, completedTime);
+    Duration difference = Duration.between(startTimeOfCompletableFutures, endTimeOfCompletableFutures);
     System.out.println(MessageFormat.format("\n\n{0,number,#} requests in {1}.{2,number,#}, {3} read", requestCounter.get(), LocalTime.ofSecondOfDay(difference.getSeconds()), difference.getNano(), humanReadableByteCountSI(bytesCounter.get())));
-    System.out.println(MessageFormat.format("Requests/sec: {0,number,#}", ((int) (requestCounter.get() / durationInSec))));
+    System.out.println(MessageFormat.format("Requests/sec: {0,number,#}", requestCounter.get() / durationInSec));
     System.out.println(MessageFormat.format("Transfer/sec: {0}", humanReadableByteCountSI(bytesCounter.get() / durationInSec)));
   }
 
   public CompletableFuture<io.vertx.ext.web.client.HttpResponse<Buffer>> request(WebClient webClient, Instant instant) {
     return webClient.getAbs(url)
-            .ssl(url.startsWith("https") ? true : false)
+            .ssl(url.startsWith("https"))
             .putHeaders(headersMultiMap)
             .send()
             .toCompletionStage()
             .toCompletableFuture()
-            .thenComposeAsync(new Function<HttpResponse<Buffer>, CompletionStage<HttpResponse<Buffer>>>() {
-              @Override
-              public CompletionStage<io.vertx.ext.web.client.HttpResponse<Buffer>> apply(io.vertx.ext.web.client.HttpResponse<Buffer> stringHttpResponse) {
-                if (Instant.now().isBefore(instant.plusSeconds(durationInSec))) {
-                  requestCounter.incrementAndGet();
-                  bytesCounter.addAndGet(stringHttpResponse.bodyAsString().getBytes().length);
-                  return request(webClient, instant);
-                } else {
-                  webClient.close();
-                  return CompletableFuture.<io.vertx.ext.web.client.HttpResponse<Buffer>>completedFuture(stringHttpResponse);
-                }
+            .thenComposeAsync(stringHttpResponse -> {
+              if (Instant.now().isBefore(instant.plusSeconds(durationInSec))) {
+                requestCounter.incrementAndGet();
+                bytesCounter.addAndGet(stringHttpResponse.bodyAsString().getBytes().length);
+                return request(webClient, instant);
+              } else {
+                webClient.close();
+                return CompletableFuture.completedFuture(stringHttpResponse);
               }
             });
   }
