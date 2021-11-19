@@ -17,9 +17,10 @@ jobs:
     - name: 'Setup GraalVM'
       uses: DeLaGuardo/setup-graalvm@master
       with:
-        graalvm-version: vm-21.3.0
+        graalvm-version: 21.3.0
+        java: 'java17'
     - name: 'Install native-image'
-      run: $GU_COMMAND install native-image
+      run: gu.cmd install native-image
     - name: 'Print Info'
       run: java -version && $GU_COMMAND list -v && mvn --version && pwd
     - name: 'Build Image (windows)'
