@@ -7,7 +7,6 @@ import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.impl.headers.HeadersMultiMap;
 import io.vertx.core.impl.cpu.CpuCoreSensor;
-import io.vertx.core.net.OpenSSLEngineOptions;
 import io.vertx.ext.web.client.HttpResponse;
 import io.vertx.ext.web.client.WebClient;
 import io.vertx.ext.web.client.WebClientOptions;
@@ -85,7 +84,7 @@ public class WrkToolQuarkusApplication implements Runnable, QuarkusApplication {
     Instant now = Instant.now();
     List<CompletableFuture<HttpResponse<Buffer>>> listOfCompletableFuture = IntStream.range(0, 100).mapToObj(x -> request(WebClient
                     .create(vertx, new WebClientOptions()
-                            .setConnectTimeout((int)Duration.ofSeconds(timeoutInSec).toMillis())
+                            .setConnectTimeout((int) Duration.ofSeconds(timeoutInSec).toMillis())
                             //.setTryUseCompression(true)
                             .setVerifyHost(false)
                             .setReuseAddress(true)
@@ -94,8 +93,8 @@ public class WrkToolQuarkusApplication implements Runnable, QuarkusApplication {
                             .setTcpNoDelay(true)
                             .setTcpQuickAck(true)
                             .setKeepAlive(true)
-                            .setMaxPoolSize(2)
-                            .setOpenSslEngineOptions(new OpenSSLEngineOptions().setSessionCacheEnabled(false))), now))
+                            //.setOpenSslEngineOptions(new OpenSSLEngineOptions().setSessionCacheEnabled(false))
+                            .setMaxPoolSize(2)), now))
             .collect(Collectors.toList());
     try {
       CompletableFuture.allOf(listOfCompletableFuture.toArray(new CompletableFuture[0])).get();
