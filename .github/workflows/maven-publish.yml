@@ -22,7 +22,8 @@ jobs:
         cache: maven
     - name: Build with Maven
       run: mvn -B clean package -Pnative
-    - run: ls -altr target/*
+    - name: "List target directory"
+      run: ls -altr target/*
     - uses: dev-drprasad/delete-tag-and-release@v0.2.0
       name: Delete the previous release
       with:
