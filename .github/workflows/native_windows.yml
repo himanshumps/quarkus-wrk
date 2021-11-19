@@ -1,0 +1,48 @@
+# This workflow will build a package using Maven and then publish it to GitHub packages when a release is created
+# For more information see: https://github.com/actions/setup-java/blob/main/docs/advanced-usage.md#apache-maven-with-a-settings-path
+
+name: Native Application (Windows - GraalVM)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-2019
+    permissions:
+      contents: write
+      packages: write
+    steps:
+    - uses: actions/checkout@v2
+    - name: 'Setup GraalVM'
+      uses: DeLaGuardo/setup-graalvm@master
+      with:
+        graalvm-version: vm-21.3.0
+    - name: 'Install native-image'
+      run: $GU_COMMAND install native-image
+    - name: 'Print Info'
+      run: java -version && $GU_COMMAND list -v && mvn --version && pwd
+    - name: 'Build Image (windows)'
+      shell: cmd
+      run: call "C:/Program Files (x86)/Microsoft Visual Studio/2019/Enterprise/VC/Auxiliary/Build/vcvars64.bat" && mvn --batch-mode -Pnative clean package
+    - name: 'Build Image (windows)'
+      shell: cmd
+      run: dir target/*
+    - uses: dev-drprasad/delete-tag-and-release@v0.2.0
+      name: Delete the previous release
+      with:
+        delete_release: true
+        tag_name: "0.1.0-windows_x64"
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}      
+    - name: Release
+      uses: softprops/action-gh-release@v1
+      with:
+        body: This is the Linux x64 compatible native image build using Red Hat Mandrel build
+        files: |
+          target/quarkus-wrk-runner
+          target/quarkus-wrk-runner.jar
+        tag_name: "0.1.0-windows_x64"
+        prerelease: true
+      env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
