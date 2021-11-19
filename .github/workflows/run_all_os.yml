@@ -94,10 +94,11 @@ jobs:
         with:
           name: upload_url.txt
       - name: Get upload_url
+        shell: cmd
         run: |
-          export upload_url=$(<upload_url.txt)
+          set /P upload_url= <upload_url.txt
           rm upload_url.txt
-          echo "upload_url=${upload_url}" >> $GITHUB_ENV
+          echo "upload_url=%upload_url%" >> $GITHUB_ENV
       - name: Upload Release Asset (Windows exe)
         uses: actions/upload-release-asset@v1
         with:
