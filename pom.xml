@@ -35,17 +35,11 @@
     </dependency>
     <dependency>
       <groupId>io.quarkus</groupId>
-      <artifactId>quarkus-vertx</artifactId>
-      <exclusions>
-        <exclusion>
-          <groupId>io.netty</groupId>
-          <artifactId>netty-codec-haproxy</artifactId>
-        </exclusion>
-      </exclusions>
+      <artifactId>quarkus-netty</artifactId>
     </dependency>
     <dependency>
-      <groupId>io.smallrye.reactive</groupId>
-      <artifactId>smallrye-mutiny-vertx-web-client</artifactId>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-vertx</artifactId>
     </dependency>
     <dependency>
       <groupId>io.quarkus</groupId>
@@ -54,7 +48,6 @@
     <!--<dependency>
       <groupId>io.netty</groupId>
       <artifactId>netty-tcnative-boringssl-static</artifactId>
-      <version>2.0.45.Final</version>
       <scope>compile</scope>
       <optional>false</optional>
     </dependency>-->
@@ -65,16 +58,6 @@
       <scope>compile</scope>
       <optional>false</optional>
     </dependency>-->
-    <dependency>
-      <groupId>io.quarkus</groupId>
-      <artifactId>quarkus-junit5</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>io.rest-assured</groupId>
-      <artifactId>rest-assured</artifactId>
-      <scope>test</scope>
-    </dependency>
   </dependencies>
   <build>
     <plugins>
@@ -148,7 +131,6 @@
       <properties>
         <quarkus.package.type>native</quarkus.package.type>
         <!--<quarkus.native.additional-build-args>initialize-at-run-time=io.netty.util.AbstractReferenceCounted\,io.netty.buffer.AbstractPooledDerivedByteBuf\,io.netty.buffer.PooledByteBuf\,io.netty.buffer.PooledSlicedByteBuf\,io.netty.buffer.UnpooledHeapByteBuf\,io.netty.buffer.PooledByteBufAllocator\,io.netty.buffer.UnpooledByteBufAllocator$InstrumentedUnpooledUnsafeDirectByteBuf\,io.netty.buffer.PooledUnsafeDirectByteBuf\,io.netty.buffer.UnpooledDirectByteBuf\,io.netty.buffer.AbstractReferenceCountedByteBuf\,io.netty.buffer.ByteBufAllocator\,io.netty.handler.ssl.ReferenceCountedOpenSslContext\,io.netty.buffer.ByteBufUtil\,io.netty.buffer.UnpooledUnsafeDirectByteBuf\,io.netty.channel.epoll.Epoll,io.netty.channel.epoll.EpollEventLoop\,io.netty.channel.epoll.Native\,io.netty.channel.epoll.EpollEventArray\,io.netty.channel.DefaultFileRegion\,io.netty.channel.unix.Errors</quarkus.native.additional-build-args>-->
-        <quarkus.native.additional-build-args>--initialize-at-run-time=io.netty.handler.codec.compression.BrotliOptions\,com.infy.hackathon.HackthonQuarkusApplication</quarkus.native.additional-build-args>
       </properties>
     </profile>
   </profiles>
