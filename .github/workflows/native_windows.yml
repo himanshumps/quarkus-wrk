@@ -24,7 +24,7 @@ jobs:
     - name: 'Install native-image'
       run: gu.cmd install native-image
     - name: 'Print Info'
-      run: java -version && $GU_COMMAND list -v && mvn --version && pwd
+      run: java -version && gu.cmd list -v && mvn --version && pwd
     - name: 'Build Image (windows)'
       shell: cmd
       run: call "C:/Program Files (x86)/Microsoft Visual Studio/2019/Enterprise/VC/Auxiliary/Build/vcvars64.bat" && mvn --batch-mode -Pnative clean package
