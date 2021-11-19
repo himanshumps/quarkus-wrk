@@ -84,21 +84,22 @@ jobs:
           personal-token: ${{ secrets.GITHUB_TOKEN }}
       - name: 'Install native-image'
         run: gu.cmd install native-image
-      - name: 'Print Info'
-        run: java -version && gu.cmd list -v && mvn --version && pwd
-      - name: 'Build Image (windows)'
-        shell: cmd
-        run: call "C:/Program Files (x86)/Microsoft Visual Studio/2019/Enterprise/VC/Auxiliary/Build/vcvars64.bat" && mvn --batch-mode -Pnative clean package
       - name: Download upload_url artifact
         uses: actions/download-artifact@v1
         with:
           name: upload_url.txt
       - name: Get upload_url
-        shell: cmd
+        shell: bash
         run: |
-          set /P upload_url= <upload_url.txt
+          export upload_url=$(<upload_url.txt)
           rm upload_url.txt
-          echo "upload_url=%upload_url%" >> $GITHUB_ENV
+          echo "upload_url=${upload_url}" >> $GITHUB_ENV
+      - name: 'Print Info'
+        run: java -version && gu.cmd list -v && mvn --version && pwd
+      - name: 'Build Image (windows)'
+        shell: cmd
+        run: call "C:/Program Files (x86)/Microsoft Visual Studio/2019/Enterprise/VC/Auxiliary/Build/vcvars64.bat" && mvn --batch-mode -Pnative clean package
+
       - name: Upload Release Asset (Windows exe)
         uses: actions/upload-release-asset@v1
         with:
