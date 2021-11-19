@@ -31,7 +31,7 @@ jobs:
       uses: softprops/action-gh-release@v1
       with:
         files: |
-          target/quarkus-wrk-1.0.0-SNAPSHOT-runner
+          target/quarkus-wrk
         tag_name: "0.1.0"
         prerelease: true
       env:
