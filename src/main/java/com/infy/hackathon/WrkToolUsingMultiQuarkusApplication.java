@@ -29,6 +29,8 @@ import java.time.LocalTime;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.IntStream;
@@ -81,6 +83,7 @@ public class WrkToolUsingMultiQuarkusApplication implements Runnable, QuarkusApp
     System.out.println("vertx.isNativeTransportEnabled(): " + vertx.isNativeTransportEnabled());
     //System.out.println("Epoll.isAvailable(): " + Epoll.isAvailable());
     System.out.println("OpenSsl.isAvailable(): " + OpenSsl.isAvailable());
+    int eventLoopCount = CpuCoreSensor.availableProcessors() * 2;
     if (headers != null) {
       for (String header : headers) {
         headersMultiMap.add(
@@ -90,7 +93,7 @@ public class WrkToolUsingMultiQuarkusApplication implements Runnable, QuarkusApp
       }
     }
     System.out.println(MessageFormat.format("\nRunning {0} test @ {1}", LocalTime.ofSecondOfDay(durationInSec), url));
-    System.out.println(MessageFormat.format("{0,number,#} event loop and {1,number,#} connections", CpuCoreSensor.availableProcessors() * 2, connections));
+    System.out.println(MessageFormat.format("{0,number,#} event loop and {1,number,#} connections", eventLoopCount, connections));
     WebClientOptions webClientOptions = new WebClientOptions()
             .setConnectTimeout((int) Duration.ofSeconds(timeoutInSec).toMillis())
             .setUserAgent("quarkus-wrk")
@@ -98,7 +101,7 @@ public class WrkToolUsingMultiQuarkusApplication implements Runnable, QuarkusApp
             .setVerifyHost(false)
             .setReuseAddress(true)
             .setKeepAlive(true)
-            .setPoolCleanerPeriod((int)Duration.ofSeconds(durationInSec + 5).toMillis())
+            .setPoolCleanerPeriod((int) Duration.ofSeconds(durationInSec + 5).toMillis())
             .setUseAlpn(false)
             .setMetricsName("Webclient")
             .setProtocolVersion(HttpVersion.HTTP_1_1)
@@ -120,55 +123,63 @@ public class WrkToolUsingMultiQuarkusApplication implements Runnable, QuarkusApp
     final HttpRequest<Buffer> bufferHttpRequest = webClient
             .getAbs(url)
             .putHeaders(headersMultiMap);
-    CountDownLatch countDownLatch = new CountDownLatch(1);
-    Multi.createFrom().items(() -> IntStream.range(0, 1000000000).boxed())
-            .emitOn(vertx.nettyEventLoopGroup())
-            .select().first(Duration.ofSeconds(durationInSec))
-            .onItem().transformToMulti(item -> {
-              return bufferHttpRequest
-                      .send()
-                      .toMulti();
-            }).withRequests(connections).merge()
-            .subscribe().withSubscriber(new MultiSubscriber<HttpResponse<Buffer>>() {
-              Subscription subscription;
+    CountDownLatch countDownLatch = new CountDownLatch(eventLoopCount);
+    Executor executor = Executors.newFixedThreadPool(eventLoopCount);
+    for (int i = 0; i < eventLoopCount; i++) {
+      executor.execute(() -> Multi.createFrom().items(() -> IntStream.range(0, 1000000000).boxed())
+              .emitOn(vertx.nettyEventLoopGroup())
+              .select().first(Duration.ofSeconds(durationInSec))
+              .onItem().transformToMulti(item -> {
+                return bufferHttpRequest
+                        .send()
+                        .toMulti();
+              }).withRequests(connections).merge()
+              .subscribe().withSubscriber(new MultiSubscriber<HttpResponse<Buffer>>() {
+                Subscription subscription;
 
-              @Override
-              public void onItem(HttpResponse<Buffer> item) {
-                requestCounter.incrementAndGet();
-                bytesCounter.addAndGet(item.body().getBytes().length);
-                subscription.request(5);
-              }
+                @Override
+                public void onItem(HttpResponse<Buffer> item) {
+                  requestCounter.incrementAndGet();
+                  bytesCounter.addAndGet(item.body().getBytes().length);
+                  subscription.request(eventLoopCount);
+                }
 
-              @Override
-              public void onFailure(Throwable failure) {
-                failure.printStackTrace();
-                countDownLatch.countDown();
-              }
+                @Override
+                public void onFailure(Throwable failure) {
+                  failure.printStackTrace();
+                  countDownLatch.countDown();
+                }
 
-              @Override
-              public void onCompletion() {
-                countDownLatch.countDown();
-              }
+                @Override
+                public void onCompletion() {
+                  countDownLatch.countDown();
+                }
 
-              @Override
-              public void onSubscribe(Subscription subscription) {
-                this.subscription = subscription;
-                subscription.request(connections);
-              }
-            });
+                @Override
+                public void onSubscribe(Subscription subscription) {
+                  this.subscription = subscription;
+                  subscription.request(connections);
+                }
+              }));
+    }
     try {
       countDownLatch.await();
       endTime = Instant.now();
-    } catch (InterruptedException e) {
+    } catch (
+            InterruptedException e) {
       e.printStackTrace();
     }
     webClient.close();
     vertx.close();
 
     Duration difference = Duration.between(startTime, endTime);
-    System.out.println(MessageFormat.format("\n{0,number,#} requests in {1}.{2,number,#}, {3} read", requestCounter.get(), LocalTime.ofSecondOfDay(difference.getSeconds()), difference.getNano(), humanReadableByteCountSI(bytesCounter.get())));
+    System.out.println(MessageFormat.format("\n{0,number,#} requests in {1}.{2,number,#}, {3} read", requestCounter.get(), LocalTime.ofSecondOfDay(difference.getSeconds()), difference.getNano(),
+
+            humanReadableByteCountSI(bytesCounter.get())));
     System.out.println(MessageFormat.format("Requests/sec: {0,number,#}", requestCounter.get() / difference.getSeconds()));
-    System.out.println(MessageFormat.format("Transfer/sec: {0}", humanReadableByteCountSI(bytesCounter.get() / difference.getSeconds())));
+    System.out.println(MessageFormat.format("Transfer/sec: {0}",
+
+            humanReadableByteCountSI(bytesCounter.get() / difference.getSeconds())));
   }
 
   public static String humanReadableByteCountSI(long bytes) {
