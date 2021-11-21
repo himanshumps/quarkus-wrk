@@ -14,7 +14,7 @@
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <quarkus.platform.artifact-id>quarkus-bom</quarkus.platform.artifact-id>
     <quarkus.platform.group-id>io.quarkus.platform</quarkus.platform.group-id>
-    <quarkus.platform.version>2.4.2.Final</quarkus.platform.version>
+    <quarkus.platform.version>2.5.0.CR1</quarkus.platform.version>
     <surefire-plugin.version>3.0.0-M4</surefire-plugin.version>
   </properties>
   <dependencyManagement>
@@ -49,6 +49,30 @@
       <groupId>io.smallrye.reactive</groupId>
       <artifactId>smallrye-mutiny-vertx-web-client</artifactId>
     </dependency>
+<!--
+    <dependency>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-mutiny</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.smallrye.reactive</groupId>
+      <artifactId>smallrye-mutiny-vertx-core</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.netty</groupId>
+      <artifactId>netty-tcnative-boringssl-static</artifactId>
+      <version>2.0.46.Final</version>
+      <scope>compile</scope>
+      <optional>false</optional>
+    </dependency>
+    <dependency>
+      <groupId>io.netty</groupId>
+      <artifactId>netty-transport-native-epoll</artifactId>
+      <classifier>linux-x86_64</classifier>
+      <scope>compile</scope>
+      <optional>false</optional>
+    </dependency>
+-->
   </dependencies>
   <build>
     <finalName>quarkus-wrk</finalName>
@@ -91,8 +115,8 @@
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-compiler-plugin</artifactId>
             <configuration>
-                <source>17</source>
-                <target>17</target>
+                <source>16</source>
+                <target>16</target>
             </configuration>
         </plugin>
     </plugins>
@@ -109,5 +133,22 @@
         <quarkus.package.type>native</quarkus.package.type>
       </properties>
     </profile>
+    <profile>
+      <id>coolway</id>
+      <repositories>
+        <repository>
+          <id>maven</id>
+          <name>Slowly office site</name>
+          <url>https://repo.maven.apache.org/maven2</url>
+        </repository>
+      </repositories>
+    </profile>
   </profiles>
+  <repositories>
+    <repository>
+      <id>central maven repo</id>
+      <name>central maven repo https</name>
+      <url>https://repo.maven.apache.org/maven2</url>
+    </repository>
+  </repositories>
 </project>
