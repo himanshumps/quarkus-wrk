@@ -1,6 +1,5 @@
 package com.infy.hackathon;
 
-import io.netty.channel.epoll.Epoll;
 import io.netty.handler.ssl.OpenSsl;
 import io.quarkus.runtime.QuarkusApplication;
 import io.quarkus.runtime.annotations.QuarkusMain;
