@@ -1,10 +1,14 @@
 package com.infy.hackathon;
 
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Tags;
+import io.netty.channel.epoll.Epoll;
 import io.netty.handler.ssl.OpenSsl;
 import io.quarkus.runtime.QuarkusApplication;
 import io.quarkus.runtime.annotations.QuarkusMain;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.subscription.MultiSubscriber;
+import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.impl.cpu.CpuCoreSensor;
 import io.vertx.core.net.JdkSSLEngineOptions;
@@ -13,12 +17,12 @@ import io.vertx.ext.web.client.WebClientOptions;
 import io.vertx.mutiny.core.MultiMap;
 import io.vertx.mutiny.core.Vertx;
 import io.vertx.mutiny.core.buffer.Buffer;
-import io.vertx.mutiny.ext.web.client.HttpRequest;
 import io.vertx.mutiny.ext.web.client.HttpResponse;
 import io.vertx.mutiny.ext.web.client.WebClient;
 import org.reactivestreams.Subscription;
 import picocli.CommandLine;
 
+import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 import java.text.CharacterIterator;
 import java.text.MessageFormat;
@@ -29,9 +33,10 @@ import java.time.LocalTime;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 @QuarkusMain
 @CommandLine.Command(name = "demo", mixinStandardHelpOptions = true)
@@ -39,7 +44,24 @@ public class WrkToolUsingMultiQuarkusApplication implements Runnable, QuarkusApp
   @Inject
   CommandLine.IFactory factory;
 
-  private final Vertx vertx;
+  private Vertx vertx;
+
+  private final MeterRegistry registry;
+
+  @PostConstruct
+  void initialize() {
+
+        /*VertxOptions vertxOptions = new VertxOptions().setMetricsOptions(
+                new MicrometerMetricsOptions()
+                        .setMicrometerRegistry(registry)
+                        .setEnabled(true));
+
+        vertx = Vertx.vertx(vertxOptions);*/
+
+    System.out.println("Is Vertx Metrics Enabled - " + vertx.isMetricsEnabled());
+
+
+  }
 
   @CommandLine.Option(names = {"-c", "--connections"}, description = "Connections to keep open", defaultValue = "100", showDefaultValue = CommandLine.Help.Visibility.ALWAYS)
   private Integer connections;
@@ -66,9 +88,29 @@ public class WrkToolUsingMultiQuarkusApplication implements Runnable, QuarkusApp
 
   private final AtomicInteger requestCounter = new AtomicInteger();
   private final AtomicLong bytesCounter = new AtomicLong();
+  //private MetricsService metricsService;
+  /*@BuildStep(onlyIf = VertxBinderEnabled.class)
+  @io.quarkus.deployment.annotations.Record(value = ExecutionTime.STATIC_INIT)
+  VertxOptionsConsumerBuildItem build(MeterRegistry registry) {
+    return new VertxOptionsConsumerBuildItem(new Consumer<VertxOptions>() {
+      @Override
+      public void accept(VertxOptions vertxOptions) {
+        System.out.println("Applying vertx options");
+        vertxOptions.setMetricsOptions(new MicrometerMetricsOptions().setMicrometerRegistry(registry).setEnabled(true));
+      }
+    }, Interceptor.Priority.APPLICATION);
+  }
+  static class VertxBinderEnabled implements BooleanSupplier {
+    public boolean getAsBoolean() {
+      return true;
+    }
+  }*/
 
-  public WrkToolUsingMultiQuarkusApplication(Vertx vertx) {
+  public WrkToolUsingMultiQuarkusApplication(Vertx vertx, MeterRegistry registry) {
+    System.out.println("In constructor");
     this.vertx = vertx;
+    this.registry = registry;
+    this.registry.gauge("http_request_count", Tags.empty(), requestCounter);
   }
 
   @Override
@@ -91,48 +133,48 @@ public class WrkToolUsingMultiQuarkusApplication implements Runnable, QuarkusApp
     System.out.println(MessageFormat.format("\nRunning {0} test @ {1}", LocalTime.ofSecondOfDay(durationInSec), url));
     System.out.println(MessageFormat.format("{0,number,#} event loop and {1,number,#} connections", CpuCoreSensor.availableProcessors() * 2, connections));
     WebClientOptions webClientOptions = new WebClientOptions()
+            .setTryUseCompression(true)
             .setConnectTimeout((int) Duration.ofSeconds(timeoutInSec).toMillis())
             .setUserAgent("quarkus-wrk")
             .setPipelining(false)
             .setVerifyHost(false)
             .setReuseAddress(true)
             .setKeepAlive(true)
-            .setPoolCleanerPeriod((int)Duration.ofSeconds(durationInSec + 5).toMillis())
-            .setUseAlpn(false)
+            //.setPoolCleanerPeriod((int) Duration.ofSeconds(durationInSec + 5).toMillis())
+            .setUseAlpn(true)
             .setMetricsName("Webclient")
             .setProtocolVersion(HttpVersion.HTTP_1_1)
             .setMaxPoolSize(connections)
-            .setSslEngineOptions(OpenSsl.isAvailable() ? new OpenSSLEngineOptions() : new JdkSSLEngineOptions());
+            .setSslEngineOptions(OpenSsl.isAvailable() ? new OpenSSLEngineOptions().setSessionCacheEnabled(false) : new JdkSSLEngineOptions());
     //only for native transport - Better Performance
-    /*if (Epoll.isAvailable()) {
+    if (Epoll.isAvailable()) {
       webClientOptions
               .setReusePort(true)
               .setTcpCork(true)
               .setTcpQuickAck(true)
               .setTcpFastOpen(true);
-    }*/
-    WebClient webClient = WebClient.create(vertx, webClientOptions);
+    }
+    final WebClient webClient = WebClient.create(vertx, webClientOptions);
+    //metricsService = MetricsService.create(vertx);
     Instant startTime = Instant.now();
     Instant endTime = Instant.now();
-    final HttpRequest<Buffer> bufferHttpRequest = webClient
-            .getAbs(url)
-            .putHeaders(headersMultiMap);
     CountDownLatch countDownLatch = new CountDownLatch(1);
-    Multi.createFrom().items(() -> IntStream.range(0, 1000000000).boxed())
+    //HTTPRequestAndBodyMulti<HTTPRequestAndBody> httpRequestAndBodyHTTPRequestAndBodyMulti = new HTTPRequestAndBodyMulti<>(webClient, HttpMethod.GET, url, headersMultiMap, Buffer.buffer());
+    Multi.createFrom().items(Stream.generate(new HTTPRequestAndBodySupplier(webClient, HttpMethod.GET, url, headersMultiMap, Buffer.buffer())))
             .emitOn(vertx.nettyEventLoopGroup())
             .select().first(Duration.ofSeconds(durationInSec))
-            .onItem().transformToMulti(item -> {
-              return bufferHttpRequest
-                      .send()
-                      .toMulti();
-            }).withRequests(connections).merge()
+            .onItem().transformToMulti(item -> item.httpRequest().send()/*.invoke(() -> System.out.println(Thread.currentThread().getName()))*/.toMulti()).withRequests(connections).merge()
             .subscribe().withSubscriber(new MultiSubscriber<HttpResponse<Buffer>>() {
               Subscription subscription;
 
               @Override
               public void onItem(HttpResponse<Buffer> item) {
+                /*System.out.println("onItem: " + Thread.currentThread().getName());*/
+                /*if (requestCounter.get() % 500 == 0)
+                  System.out.println(metricsService.getMetricsSnapshot());
+                */
                 requestCounter.incrementAndGet();
-                bytesCounter.addAndGet(item.body().getBytes().length);
+                bytesCounter.addAndGet(item.bodyAsString().length());
                 subscription.request(5);
               }
 
@@ -160,7 +202,11 @@ public class WrkToolUsingMultiQuarkusApplication implements Runnable, QuarkusApp
       e.printStackTrace();
     }
     webClient.close();
-    vertx.close();
+    try {
+      vertx.close().subscribeAsCompletionStage().get();
+    } catch (InterruptedException | ExecutionException e) {
+      e.printStackTrace();
+    }
 
     Duration difference = Duration.between(startTime, endTime);
     System.out.println(MessageFormat.format("\n{0,number,#} requests in {1}.{2,number,#}, {3} read", requestCounter.get(), LocalTime.ofSecondOfDay(difference.getSeconds()), difference.getNano(), humanReadableByteCountSI(bytesCounter.get())));
