@@ -1,4 +1,4 @@
-package com.infy.hackathon;
+package com.test.quarkus.performance;
 
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tags;
