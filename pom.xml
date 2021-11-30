@@ -45,18 +45,18 @@
         <dependency>
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-resteasy</artifactId>
-            <exclusions>
+            <!--<exclusions>
                 <exclusion>
                     <groupId>io.quarkus</groupId>
                     <artifactId>quarkus-vertx</artifactId>
                 </exclusion>
-            </exclusions>
+            </exclusions>-->
         </dependency>
-        <dependency>
+        <!--<dependency>
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-wrk</artifactId>
             <version>${quarkus.platform.version}</version>
-        </dependency>
+        </dependency>-->
         <!--<dependency>
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-vertx-http-deployment</artifactId>
