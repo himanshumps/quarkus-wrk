@@ -92,6 +92,7 @@ jobs:
       - name: 'Build Image (windows)'
         run: >-
           "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvars64.bat" && mvn --batch-mode -Pnative clean package
+        shell: cmd
       - name: Download upload_url artifact
         uses: actions/download-artifact@v2
         with:
