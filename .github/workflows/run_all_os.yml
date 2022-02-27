@@ -72,7 +72,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   windows-amd64:
-    runs-on: windows-latest
+    runs-on: windows-2019
     permissions:
       contents: write
       packages: write
@@ -90,8 +90,8 @@ jobs:
       - name: 'Print Info'
         run: java -version && gu.cmd list -v && mvn --version && pwd
       - name: 'Build Image (windows)'
-        shell: cmd
-        run: call "C:/Program Files (x86)/Microsoft Visual Studio/2019/Enterprise/VC/Auxiliary/Build/vcvars64.bat" && mvn --batch-mode -Pnative clean package
+        run: >-
+          "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvars64.bat" && mvn --batch-mode -Pnative clean package
       - name: Download upload_url artifact
         uses: actions/download-artifact@v2
         with:
