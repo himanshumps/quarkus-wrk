@@ -4,7 +4,7 @@
 name: Native Application (All Versions)
 
 on:
-  workflow_dispatch:pp
+  workflow_dispatch:
 env:
   tag_name: 0.0.1
   java_version: 17
