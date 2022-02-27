@@ -57,7 +57,7 @@ jobs:
         uses: actions/upload-release-asset@v1
         with:
           upload_url: ${{ env.upload_url }}
-          asset_path: target/quarkus-wrk-runner
+          asset_path: target/app-runner
           asset_name: quarkus-wrk-linux-64
           asset_content_type: application/octet-stream
         env:
@@ -66,7 +66,7 @@ jobs:
         uses: actions/upload-release-asset@v1
         with:
           upload_url: ${{ env.upload_url }}
-          asset_path: target/quarkus-wrk-runner.jar
+          asset_path: target/app-runner.jar
           asset_name: quarkus-wrk-runner.jar
           asset_content_type: application/octet-stream
         env:
@@ -106,7 +106,7 @@ jobs:
         uses: actions/upload-release-asset@v1
         with:
           upload_url: ${{ env.upload_url }}
-          asset_path: target/quarkus-wrk-runner.exe
+          asset_path: target/app-runner.exe
           asset_name: quarkus-wrk.exe
           asset_content_type: application/octet-stream
         env:
@@ -145,7 +145,7 @@ jobs:
         uses: actions/upload-release-asset@v1
         with:
           upload_url: ${{ env.upload_url }}
-          asset_path: target/quarkus-wrk-runner
+          asset_path: target/app-runner
           asset_name: quarkus-wrk-macos
           asset_content_type: application/octet-stream
         env:
